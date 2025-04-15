@@ -26,7 +26,7 @@ const MainForm: React.FC = () => {
       });
       router.push("/completion/brainstorm");
     }
-  }, [formState]);
+  }, [formState, autoGenerate, router, setPrompt]);
 
   return (
     <form action={action} className="flex gap-2 justify-end flex-col w-full ">

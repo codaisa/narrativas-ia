@@ -37,13 +37,13 @@ const BrainBox: React.FC<Props> = ({ data, prompt, autoGenerate }) => {
 
   const handleGeneratePrompt = useCallback(() => {
     handleSubmit();
-  }, []);
+  }, [handleSubmit]);
 
   useEffect(() => {
     if (autoGenerate) {
       handleGeneratePrompt();
     }
-  }, [autoGenerate]);
+  }, [autoGenerate, handleGeneratePrompt]);
 
   const Tab = Tabs[Object.keys(Tabs)[tab]];
 
@@ -69,7 +69,7 @@ const BrainBox: React.FC<Props> = ({ data, prompt, autoGenerate }) => {
         <div className="w-full rounded-sm p-1 mt-4">
           <div className="flex gap-4">
             {tabs.map((currentTab, index) => (
-              <div className="flex flex-col relative">
+              <div className="flex flex-col relative" key={index}>
                 <button
                   key={index}
                   onClick={() => setTab(index)}

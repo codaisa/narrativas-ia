@@ -3,7 +3,6 @@ import { ArrowsClockwise } from "@phosphor-icons/react/dist/ssr";
 import React from "react";
 import { Props } from "../types";
 import { cn } from "@/lib/utils";
-import { useChat } from "@ai-sdk/react";
 
 const FeedbackTab: React.FC<Props> = ({
   handleGenerate,
