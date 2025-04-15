@@ -1,3 +1,4 @@
+import CustomCircleProgress from "./_components/CircleProgress";
 import Progress from "./_components/Progress";
 
 export default function RootLayout({
@@ -6,10 +7,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex flex-col w-screen h-screen">
-      <div className="w-full min-h-14 h-14">
+    <div className="flex flex-col w-screen h-screen relative">
+      <div className="w-full min-h-14 h-14 sticky top-0 bg-white z-10">
         <div className="w-full flex h-full justify-between items-center px-12">
-          <div />
+          <CustomCircleProgress />
           <span className="font-semibold text-2xl">SCAMPER</span>
         </div>
 

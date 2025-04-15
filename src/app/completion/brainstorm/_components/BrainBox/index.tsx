@@ -196,7 +196,7 @@ const BrainBox: React.FC<Props> = ({ data, prompt, autoGenerate }) => {
         open={settingsOpen}
         onOpenChange={(p) => !p && handleCloseSettings()}
       >
-        <SheetContent>
+        <SheetContent className="overflow-auto">
           <SheetHeader>
             <SheetTitle>{data.title}</SheetTitle>
             <SheetDescription>

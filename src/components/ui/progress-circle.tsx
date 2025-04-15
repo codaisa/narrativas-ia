@@ -3,6 +3,7 @@ import type React from "react";
 
 export interface ProgressCircleProps extends React.ComponentProps<"svg"> {
   value: number;
+  label: string;
   className?: string;
 }
 
@@ -26,12 +27,14 @@ const total = 100;
  */
 export const ProgressCircle = ({
   value,
+  label,
   className,
   ...restSvgProps
 }: ProgressCircleProps) => {
   const normalizedValue = clamp(value, 0, total);
 
   const radius = (size - strokeWidth) / 2;
+
   const circumference = 2 * Math.PI * radius;
   const progress = (normalizedValue / total) * circumference;
   const halfSize = size / 2;
@@ -47,26 +50,30 @@ export const ProgressCircle = ({
   return (
     // biome-ignore lint/a11y/useFocusableInteractive: false positive (progress + progressbar are not focusable interactives)
     // biome-ignore lint/nursery/useAriaPropsSupportedByRole: biome rule at odds with mdn docs (presumed nursary bug with rule)
-    <svg
-      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: false positive (progressbar not an interactive role)
-      role="progressbar"
-      viewBox={`0 0 ${size} ${size}`}
-      className={cn("size-6 text-primary", className)}
-      aria-valuenow={normalizedValue}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      {...restSvgProps}
-    >
-      <circle {...commonParams} className="stroke-current/25" />
-      <circle
-        {...commonParams}
-        stroke="currentColor"
-        strokeDasharray={circumference}
-        strokeDashoffset={circumference - progress}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${halfSize} ${halfSize})`}
-        className="stroke-current"
-      />
-    </svg>
+
+    <div className="relative flex items-center justify-center">
+      <span className="absolute z-10 text-sm font-semibold">{label}</span>
+      <svg
+        // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: false positive (progressbar not an interactive role)
+        role="progressbar"
+        viewBox={`0 0 ${size} ${size}`}
+        className={cn("size-8 text-primary", className)}
+        aria-valuenow={normalizedValue}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        {...restSvgProps}
+      >
+        <circle {...commonParams} className="stroke-current/25" />
+        <circle
+          {...commonParams}
+          stroke="currentColor"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${halfSize} ${halfSize})`}
+          className="stroke-current"
+        />
+      </svg>
+    </div>
   );
 };
