@@ -12,12 +12,16 @@ export async function POST(req: Request) {
     temperature,
   }: { prompt: string; system: string; temperature?: number } = jsonReq;
 
-  const result = streamText({
-    model: openai("gpt-3.5-turbo"),
-    ...(temperature && { temperature }),
-    system,
-    prompt,
-  });
+  try {
+    const result = streamText({
+      model: openai("gpt-3.5-turbo"),
+      ...(temperature && { temperature }),
+      system,
+      prompt,
+    });
 
-  return result.toDataStreamResponse();
+    return result.toDataStreamResponse();
+  } catch (err) {
+    console.log(err);
+  }
 }

@@ -1,28 +1,54 @@
 import { Button } from "@/components/ui/button";
-import { ArrowsClockwise } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowsClockwise,
+  FadersHorizontal,
+} from "@phosphor-icons/react/dist/ssr";
 import React from "react";
 import { Props } from "../types";
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
 const FeedbackTab: React.FC<Props> = ({
+  handleChangeFeedback,
+  handleSaveFeedback,
+  handleOpenSettings,
   handleGenerate,
+  handleUnsave,
   isGenerating,
   completion,
+  isSaved,
 }) => {
   return (
     <div className="w-full flex items-center justify-center flex-col h-full">
       {completion ? (
         <div className="w-full flex flex-col h-full">
           <div className="w-full max-h-[200px] overflow-auto mt-2 h-full flex items-start justify-start">
-            <span>{completion}</span>
+            <Textarea
+              value={completion}
+              onChange={(e) => handleChangeFeedback(e.target.value)}
+              className="h-full resize-none"
+              disabled={isSaved}
+            />
           </div>
 
-          <div className="w-full pt-6 pb-2 flex gap-2 justify-end">
-            <Button variant={"outline"} onClick={handleGenerate}>
-              Regenerar
+          {isSaved ? (
+            <Button onClick={handleUnsave} className="mt-2" variant={"outline"}>
+              Editar
             </Button>
-            <Button>Salvar</Button>
-          </div>
+          ) : (
+            <div className="w-full pt-6 pb-2 flex gap-2 justify-between">
+              <Button variant={"outline"} onClick={handleOpenSettings}>
+                <FadersHorizontal /> Configurações
+              </Button>
+
+              <div className="flex gap-2 items-center">
+                <Button variant={"outline"} onClick={handleGenerate}>
+                  Regenerar
+                </Button>
+                <Button onClick={handleSaveFeedback}>Salvar</Button>`
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="my-14 w-full flex items-center justify-center flex-col">
