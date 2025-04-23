@@ -13,7 +13,7 @@ export default function Home() {
           para seus casos de uso.
         </span>
 
-        <div className="w-full flex justify-end mt-4">
+        <div className="w-full flex justify-end mt-4 ">
           <Link href={"/completion/main-info"}>
             <Button>Iniciar brainstorm</Button>
           </Link>

@@ -7,6 +7,8 @@ import BrainBox from "./BrainBox";
 import { motion, AnimatePresence } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Warning } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const BrainstormBody = () => {
   const prompt = useStore((state) => state.prompt);
@@ -55,6 +57,12 @@ const BrainstormBody = () => {
             </motion.div>
           ))}
         </motion.div>
+
+        <div className="w-full flex justify-center mb-2 mt-20 ">
+          <Link href={"/"}>
+            <Button>Criar narrativa</Button>
+          </Link>
+        </div>
       </div>
     </AnimatePresence>
   );

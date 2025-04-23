@@ -36,7 +36,7 @@ export type Props = {
 const tabs = ["Feedback"];
 
 const BrainBox: React.FC<Props> = ({ data, prompt, autoGenerate }) => {
-  const SYSTEM_PROMPT = `Voce está trabalhando na metodologia SCAMPER. com base nesta ideia: ${prompt}. Voce receberá do usuário um questionamento do usuário a respeito de um dos métodos do scamper, ajude a pensar com base na ideia. Seja acertivo, não cite o método scamper. não faça perguntas somente responda.`;
+  const SYSTEM_PROMPT = `Voce está trabalhando na metodologia SCAMPER. com base nesta ideia: ${prompt}. Voce receberá do usuário um questionamento do usuário a respeito de um dos métodos do scamper, ajude a pensar com base na ideia. Seja acertivo, não cite o método scamper. Não faça perguntas somente responda.`;
   const USER_PROMPT = `método: ${data.title} /n/n base: ${data.description}`;
   const TEMPERATURE = 10;
 
@@ -112,6 +112,9 @@ const BrainBox: React.FC<Props> = ({ data, prompt, autoGenerate }) => {
   }, [autoGenerate, handleGeneratePrompt]);
 
   const Tab = Tabs[Object.keys(Tabs)[tab]];
+
+  console.log('Tab')
+  console.log(Tab)
 
   return (
     <TooltipProvider>
