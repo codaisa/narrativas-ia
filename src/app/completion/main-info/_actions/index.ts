@@ -16,7 +16,6 @@ export const submitInitialPrompt = async (_: IMainForm, formData: FormData) => {
     prompt: promptSchema,
   });
   const parse = schema.safeParse(Object.fromEntries(formData.entries()));
-  console.log(formData);
 
   if (!parse.success) {
     return {

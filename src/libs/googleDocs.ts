@@ -6,7 +6,7 @@ let jwtClient: JWT
 function getAuthClient(): JWT {
     if (jwtClient) return jwtClient;
 
-    const credsJson = process.env.GOOGLE_SA_CREDENTIALS!
+    const credsJson = process.env.GOOGLE_CREDENTIALS_PATH!
     const key = JSON.parse(credsJson)
 
     jwtClient = new google.auth.JWT({

@@ -59,7 +59,7 @@ const MainForm: React.FC = () => {
           <span>Solicitar criação automática</span>
         </div>
 
-        <Button className="mt-4">Criar brainstorm</Button>
+        <Button type="submit" className="mt-4">Criar brainstorm</Button>
       </form>
     </div>
   );
