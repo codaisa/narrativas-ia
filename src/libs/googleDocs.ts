@@ -1,18 +1,20 @@
 import { google } from "googleapis";
 import type { JWT } from "google-auth-library";
+import { readFileSync } from "fs";
 
 let jwtClient: JWT
 
-function getAuthClient(): JWT {
+export function getAuthClient(): JWT {
     if (jwtClient) return jwtClient;
 
-    const credsJson = process.env.GOOGLE_CREDENTIALS_PATH!
-    const key = JSON.parse(credsJson)
+    const path = process.env.GOOGLE_CREDENTIALS_PATH!;
+    const credsJson = readFileSync(path, "utf-8");
+    const key = JSON.parse(credsJson);
 
     jwtClient = new google.auth.JWT({
         email: key.client_email,
         key: key.private_key,
-        scopes: ["https://www.googleapis.com/auth/documents"]
+        scopes: ["https://www.googleapis.com/auth/documents", "https://www.googleapis.com/auth/drive"]
     })
 
     return jwtClient;

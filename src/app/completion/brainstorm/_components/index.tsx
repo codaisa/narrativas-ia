@@ -12,6 +12,7 @@ import { createNarrativeAction } from "@/app/actions/createNarrative";
 
 const BrainstormBody = () => {
   const prompt = useStore((state) => state.prompt);
+  const narrative = useStore(state => state.narrative);
   const [isCreating, setIsCreating] = useState(false)
 
   return (
@@ -29,9 +30,20 @@ const BrainstormBody = () => {
         }}
         className="w-full flex flex-col items-start"
       >
-        <span className="mb-4">
-          <b>Prompt base:</b> {prompt?.data}
-        </span>
+        <div className="flex flex-col flex-wrap items-start gap-y-1 mb-4">
+          <span >
+            <b>Prompt base:</b> {prompt?.data}
+          </span>
+          <span>
+            <b>Título:</b> {narrative?.title}
+          </span>
+          <span>
+            <b>Tipo:</b> {narrative?.tipo}
+          </span>
+          <span>
+            <b>Diretoria:</b> {narrative?.diretoria}
+          </span>
+        </div>
 
         <Alert className="mb-4">
           <Warning className="h-4 w-4" />
@@ -71,7 +83,7 @@ const BrainstormBody = () => {
           ))}
         </motion.div>
 
-        <input type="hidden" name="docId" value={process.env.TEMPLATE_DOC_6PAGINAS_ID} />
+        <input type="hidden" name="docId" value={process.env.NEXT_PUBLIC_TEMPLATE_DOC_6PAGINAS_ID} />
         <input
           type="hidden"
           name="systemPromptBase"
@@ -81,6 +93,20 @@ const BrainstormBody = () => {
           type="hidden"
           name="userPromptBase"
           value={`Base: ${prompt?.data}`}
+        />
+        <input
+          type="hidden"
+          name="title"
+          value={narrative?.title}
+        />
+        <input
+          type="hidden"
+          name="tipo"
+          value={narrative?.tipo}
+        />
+        <input type="hidden"
+          name="diretoria"
+          value={narrative?.diretoria}
         />
 
         <div className="w-full flex justify-center mb-2 mt-20 ">
