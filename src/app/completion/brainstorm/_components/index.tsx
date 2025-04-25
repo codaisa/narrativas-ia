@@ -8,27 +8,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Warning } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
-import { createNarrativeAction, CreateNarrativeResult } from "@/app/actions/createNarrative";
+import { createNarrativeAction, CreateNarrativeResult } from "./BrainBox/_actions/createNarrative";
+
 
 const BrainstormBody = () => {
   const prompt = useStore((state) => state.prompt);
   const narrative = useStore(state => state.narrative);
   const [isCreating, setIsCreating] = useState(false)
 
-  // 1) Configura a action com useActionState
   const [formState, action] = useActionState<CreateNarrativeResult, FormData>(
     createNarrativeAction,
     { status: "idle" }
   );
 
-  // 2) Quando a action terminar, desliga o isCreating
   useEffect(() => {
     if (formState.status === "success" || formState.status === "error") {
       setIsCreating(false);
     }
   }, [formState.status]);
 
-  // 3) Ao submeter, liga o isCreating e deixa a action rodar
   const handleSubmit = () => {
     setIsCreating(true);
   };
