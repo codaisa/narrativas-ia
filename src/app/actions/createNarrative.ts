@@ -8,83 +8,128 @@ import {
     getDocument,
     getAuthClient,
 } from "@/libs/googleDocs";
-import { extractTopics } from "@/libs/docsUtils";
+import { extractBlocks } from "@/libs/docsUtils";
 
-export async function createNarrativeAction(formData: FormData) {
-    // 1) Extrai tudo do form
-    const templateId = formData.get("docId") as string;
-    const systemPromptBase = formData.get("systemPromptBase") as string;
-    const userPromptBase = formData.get("userPromptBase") as string;
-    const title = formData.get("title") as string;
-    const tipo = formData.get("tipo") as string;
-    const diretoria = formData.get("diretoria") as string;
+export interface CreateNarrativeResult {
+    status: "idle" | "loading" | "success" | "error";
+    url?: string;
+    error?: string;
+}
 
-    // 2) Autentica
-    const auth = getAuthClient();
+export async function createNarrativeAction(
+    _state: CreateNarrativeResult,
+    formData: FormData
+): Promise<CreateNarrativeResult> {
 
-    // 3) Copia o template
-    const drive = google.drive({ version: "v3", auth });
-    const copyRes = await drive.files.copy({
-        fileId: templateId,
-        requestBody: {
-            name: `NarrativaIA – ${title}`,
-            // parents: [ process.env.GOOGLE_DRIVE_FOLDER_ID! ],  // opcional
-        },
-    });
+    try {
+        // 1) Extrai tudo do form
+        const templateId = formData.get("docId") as string;
+        const systemPromptBase = formData.get("systemPromptBase") as string;
+        const title = formData.get("title") as string;
+        const tipo = formData.get("tipo") as string;
+        const diretoria = formData.get("diretoria") as string;
 
-    const newDocId = copyRes.data.id!;
+        // 2) Autentica
+        const auth = getAuthClient();
 
-    await drive.permissions.create({
-        fileId: newDocId,
-        requestBody: {
-            role: "reader",
-            type: "anyone",
-            allowFileDiscovery: false
-        },
-    });
-
-    const meta = await drive.files.get({
-        fileId: newDocId,
-        fields: "id, name, webViewLink",
-    });
-    console.log("Criado doc:", meta.data);
-
-
-    // 4) Leia o clone e extraia headings
-    const doc = await getDocument(newDocId);
-    const topics = extractTopics(doc);
-
-    // 5) Prepare cabeçalho + SCAMPER
-    const requests: Array<{ insertText: { text: string; location: { index: number } } }> = [
-        {
-            insertText: {
-                text: `Título: ${title}\nTipo: ${tipo}\nDiretoria: ${diretoria}\n\n`,
-                location: { index: 1 },
+        // 3) Copia o template
+        const drive = google.drive({ version: "v3", auth });
+        const copyRes = await drive.files.copy({
+            fileId: templateId,
+            requestBody: {
+                name: `NarrativaIA – ${title}`,
             },
-        },
-    ];
-
-    for (const topic of topics) {
-        const { textStream } = streamText({
-            model: openai("gpt-3.5-turbo"),
-            system: systemPromptBase,
-            prompt: `${userPromptBase}\n\nTópico: ${topic.text}`,
         });
-        let aiText = "";
-        for await (const chunk of textStream) {
-            aiText += chunk;
+
+        const newDocId = copyRes.data.id!;
+
+        await drive.permissions.create({
+            fileId: newDocId,
+            requestBody: {
+                role: "reader",
+                type: "anyone",
+                allowFileDiscovery: false
+            },
+        });
+
+        const meta = await drive.files.get({
+            fileId: newDocId,
+            fields: "id, name, webViewLink",
+        });
+
+        // 4) Leia o clone e extraia headings
+        const doc = await getDocument(newDocId);
+
+        const headings = [
+            "delimitação do problema",
+            "apresentação do tema",
+            "faq (perguntas frequentes)",
+            "pontos de decisão",
+            "próximos passos",
+            "próximas reuniões",
+        ];
+
+        // 3) extraia blocos
+        const blocks = extractBlocks(doc, headings);
+
+        let history = "";
+
+        const requests: any[] = [];
+
+        // 4) para cada bloco, chame a IA e acumule
+        for (const block of blocks) {
+
+            const promptForAI = `
+            HISTÓRICO:
+            ${history}
+
+            TÓPICO: ${block.heading}
+
+            CONTEÚDO ATUAL DO TÓPICO:
+            ${block.text}
+
+            CONTEXTO GERAL: Título=${title}, Tipo=${tipo}, Diretoria=${diretoria}
+
+            INSTRUÇÕES: …seu mainPrompt específico…
+            `;
+
+            // 5) Prepare cabeçalho + SCAMPER
+            // chame a IA
+            const { textStream } = streamText({
+                model: openai("gpt-3.5-turbo"),
+                system: systemPromptBase,
+                prompt: promptForAI,
+            });
+            let aiText = "";
+            for await (const chunk of textStream) aiText += chunk;
+
+            // 5) Agende remoção do conteúdo antigo e inserção do novo
+            // primeiro remove o intervalo
+            requests.push({
+                deleteContentRange: { range: { startIndex: block.startIndex, endIndex: block.endIndex } },
+            });
+
+            // depois insere a resposta
+            requests.push({
+                insertText: {
+                    text: `\n${aiText.trim()}\n\n`,
+                    location: { index: block.startIndex },
+                },
+            });
+
+            history += `TÓPICO: ${block.heading}\n${aiText.trim()}\n\n`;
         }
-        requests.push({
-            insertText: {
-                text: aiText.trim() + "\n\n",
-                location: { index: topic.insertIndex },
-            },
-        });
+
+        // 6) Aplique tudo no clone
+        await batchUpdateDocument(newDocId, requests);
+
+        // 7) Retorne a URL do novo documento
+        const newDocUrl = `https://docs.google.com/document/d/${newDocId}`;
+        return { status: "success", url: newDocUrl };
+
+    } catch (e: any) {
+        console.error(e);
+        return { status: "error", error: e.message };
+
     }
-
-    // 6) Aplique tudo no clone
-    await batchUpdateDocument(newDocId, requests);
-
-    // 7) Retorne a URL do novo documento
-    return `https://docs.google.com/document/d/${newDocId}`;
 }

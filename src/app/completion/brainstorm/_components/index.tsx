@@ -1,33 +1,43 @@
 "use client";
 
 import { useStore } from "@/stores/useStore";
-import React, { useState } from "react";
+import React, { useActionState, useEffect, useState } from "react";
 import { scamperQuestions } from "../_common";
 import BrainBox from "./BrainBox";
 import { motion, AnimatePresence } from "framer-motion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Warning } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
-import { createNarrativeAction } from "@/app/actions/createNarrative";
+import { createNarrativeAction, CreateNarrativeResult } from "@/app/actions/createNarrative";
 
 const BrainstormBody = () => {
   const prompt = useStore((state) => state.prompt);
   const narrative = useStore(state => state.narrative);
   const [isCreating, setIsCreating] = useState(false)
 
+  // 1) Configura a action com useActionState
+  const [formState, action] = useActionState<CreateNarrativeResult, FormData>(
+    createNarrativeAction,
+    { status: "idle" }
+  );
+
+  // 2) Quando a action terminar, desliga o isCreating
+  useEffect(() => {
+    if (formState.status === "success" || formState.status === "error") {
+      setIsCreating(false);
+    }
+  }, [formState.status]);
+
+  // 3) Ao submeter, liga o isCreating e deixa a action rodar
+  const handleSubmit = () => {
+    setIsCreating(true);
+  };
+
   return (
     <AnimatePresence>
-      {/* Usar um useActionState fica mais limpim */}
       <form
-        action={async (formData: FormData) => {
-          setIsCreating(true);
-          try {
-            const url = await createNarrativeAction(formData);
-            window.open(url, "_blank");
-          } finally {
-            setIsCreating(false);
-          }
-        }}
+        action={action}
+        onSubmit={handleSubmit}
         className="w-full flex flex-col items-start"
       >
         <div className="flex flex-col flex-wrap items-start gap-y-1 mb-4">
@@ -110,13 +120,34 @@ const BrainstormBody = () => {
         />
 
         <div className="w-full flex justify-center mb-2 mt-20 ">
-          <Button
-            type="submit"
-            disabled={isCreating}
-          >
-            {isCreating ? "Gerando..." : "Criar narrativa completa"}
+          <Button type="submit" disabled={isCreating}>
+            {isCreating ? (
+              <span className="flex items-center">
+                Gerando
+                <span className="ml-2 inline-block w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin" />
+              </span>
+            ) : (
+              "Criar narrativa completa"
+            )}
           </Button>
         </div>
+
+        {formState.status === "success" && formState.url && (
+          <div className="my-10 text-center flex justify-center w-full ">
+            <div className="text-center w-1/3 bg-green-500 py-1 px-2 rounded-md hover:brightness-95">
+              <span className="mr-2 text-white">Sua narrativa está pronta:</span>
+              <a
+                href={formState.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-black-600 underline"
+              >
+                Abrir documento
+              </a>
+            </div>
+          </div>
+        )}
+
       </form>
     </AnimatePresence>
   );
