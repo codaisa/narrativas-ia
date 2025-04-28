@@ -21,9 +21,12 @@ const BrainstormBody = () => {
     { status: "idle" }
   );
 
+  const [showModal, setShowModal] = useState(false)
+
   useEffect(() => {
-    if (formState.status === "success" || formState.status === "error") {
-      setIsCreating(false);
+    setIsCreating(false);
+    if (formState.status === "success") {
+      setShowModal(true)
     }
   }, [formState.status]);
 
@@ -130,18 +133,33 @@ const BrainstormBody = () => {
           </Button>
         </div>
 
-        {formState.status === "success" && formState.url && (
-          <div className="my-10 text-center flex justify-center w-full ">
-            <div className="text-center w-1/3 bg-green-500 py-1 px-2 rounded-md hover:brightness-95">
-              <span className="mr-2 text-white">Sua narrativa está pronta:</span>
-              <a
-                href={formState.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-black-600 underline"
-              >
-                Abrir documento
-              </a>
+        {showModal && formState.status === "success" && formState.url && (
+          <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => setShowModal(false)}
+          >
+            <div
+              className="bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-xl font-semibold mb-4 text-center">
+                Narrativa pronta!
+              </h2>
+              <p className="mb-6 text-center">
+                Sua narrativa foi gerada com sucesso. Clique abaixo para
+                abrir o documento:
+              </p>
+              <div className="flex justify-center space-x-4">
+                <Button
+                  variant="default"
+                  onClick={() => window.open(formState.url, "_blank")}
+                >
+                  Abrir documento
+                </Button>
+                <Button variant="ghost" onClick={() => setShowModal(false)}>
+                  Fechar
+                </Button>
+              </div>
             </div>
           </div>
         )}

@@ -1,15 +1,20 @@
 import type { docs_v1 } from "googleapis";
 
+function cleanHeading(s: string | null | undefined): string {
+    return s
+        ? s.trim().replace(/[:\s]+$/, "").toLowerCase()
+        : "";
+}
+
 /**
- * Varre body.content e coleta parágrafos que:
- *  - ou têm namedStyleType HEADING_1/HEADING_2
- *  - ou o primeiro textRun está em bold
- * Depois filtra pelo texto bater (lowercase) com wantedHeadings.
+ * Extrai todos os parágrafos que são HEADING_1/HEADING_2 ou cujo primeiro run está em bold,
+ * normaliza o texto via cleanHeading e só retorna aqueles que estão na lista wantedHeadings.
  */
 export function extractTopics(
     doc: docs_v1.Schema$Document,
     wantedHeadings: string[]
 ): { text: string; insertIndex: number }[] {
+    const want = wantedHeadings.map(cleanHeading);
     const topics: { text: string; insertIndex: number }[] = [];
 
     for (const el of doc.body?.content || []) {
@@ -17,55 +22,46 @@ export function extractTopics(
         if (!p) continue;
 
         const style = p.paragraphStyle?.namedStyleType;
-        // pega o primeiro run de texto
         const run = p.elements?.[0].textRun;
-        const txt = run?.content?.trim();
-        const isBold = run?.textStyle?.bold === true;
+        const raw = run?.content;
+        const bold = run?.textStyle?.bold === true;
+        const txt = cleanHeading(raw);
 
-        // considere título se for heading‐style ou ifirst run estiver em bold
         if (
             txt &&
-            (style === "HEADING_1" ||
-                style === "HEADING_2" ||
-                isBold)
+            (style === "HEADING_1" || style === "HEADING_2" || bold) &&
+            want.includes(txt)
         ) {
-            const lower = txt.toLowerCase();
-            // só inclua se estiver na lista (também lowercase)
-            if (wantedHeadings.includes(lower)) {
-                topics.push({
-                    text: lower,
-                    insertIndex: el.endIndex ?? 1,
-                });
-            }
+            topics.push({ text: txt, insertIndex: el.endIndex ?? 1 });
         }
     }
 
     return topics;
 }
 
-
-
+/**
+ * Para cada tópico extraído por extractTopics, coleta todo o texto entre
+ * o endIndex desse tópico e o startIndex do próximo tópico (ou fim do doc).
+ */
 export function extractBlocks(
     doc: docs_v1.Schema$Document,
     wantedHeadings: string[]
 ): Array<{ heading: string; startIndex: number; endIndex: number; text: string }> {
-    // 1) pega todos os títulos do doc (com índice)…
-    const allTopics = extractTopics(doc, wantedHeadings);
-    // 2) filtra só os que eu quero (por lowercase)
-    const topics = allTopics.filter((t) =>
-        wantedHeadings.includes(t.text.toLowerCase())
-    );
+    // 1) extrai e normaliza os tópicos
+    const topics = extractTopics(doc, wantedHeadings);
 
-    const blocks: Array<any> = [];
+    // 2) ordena pela posição no documento (apenas para garantir)
+    topics.sort((a, b) => a.insertIndex - b.insertIndex);
+
     const content = doc.body?.content || [];
+    const blocks: Array<{ heading: string; startIndex: number; endIndex: number; text: string }> = [];
 
     for (let i = 0; i < topics.length; i++) {
         const { text: heading, insertIndex: startIndex } = topics[i];
-        // o fim do bloco é o início do próximo tópico, ou o fim do documento
         const endIndex =
             i + 1 < topics.length ? topics[i + 1].insertIndex : content.slice(-1)[0].endIndex!;
 
-        // 3) varre todo content e acumula texto cujos índices caem dentro desse intervalo
+        // 3) acumula todo texto cujo range caia dentro de [startIndex, endIndex)
         let blockText = "";
         for (const el of content) {
             const elStart = el.startIndex ?? 0;

@@ -46,7 +46,7 @@ export async function createNarrativeAction(
         await drive.permissions.create({
             fileId: newDocId,
             requestBody: {
-                role: "reader",
+                role: "writer",
                 type: "anyone",
                 allowFileDiscovery: false
             },
@@ -61,12 +61,11 @@ export async function createNarrativeAction(
         const doc = await getDocument(newDocId);
 
         const headings = [
-            "delimitação do problema",
-            "apresentação do tema",
-            "faq (perguntas frequentes)",
-            "pontos de decisão",
-            "próximos passos",
-            "próximas reuniões",
+            "Delimitação do Problema",
+            "Apresentação do Tema",
+            "FAQ (Perguntas Frequentes)",
+            "Pontos de Decisão",
+            "Próximos Passos",
         ];
 
         // 3) extraia blocos
