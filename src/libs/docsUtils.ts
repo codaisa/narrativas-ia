@@ -1,6 +1,6 @@
 import type { docs_v1 } from "googleapis";
 
-function cleanHeading(s: string | null | undefined): string {
+export function cleanHeading(s: string | null | undefined): string {
     return s
         ? s.trim().replace(/[:\s]+$/, "").toLowerCase()
         : "";
@@ -43,37 +43,76 @@ export function extractTopics(
  * Para cada tópico extraído por extractTopics, coleta todo o texto entre
  * o endIndex desse tópico e o startIndex do próximo tópico (ou fim do doc).
  */
+
+export type DocBlock = {
+    heading: string;
+    startIndex: number;
+    endIndex: number;
+    text: string;
+};
+
 export function extractBlocks(
     doc: docs_v1.Schema$Document,
     wantedHeadings: string[]
-): Array<{ heading: string; startIndex: number; endIndex: number; text: string }> {
-    // 1) extrai e normaliza os tópicos
-    const topics = extractTopics(doc, wantedHeadings);
-
-    // 2) ordena pela posição no documento (apenas para garantir)
-    topics.sort((a, b) => a.insertIndex - b.insertIndex);
-
+): DocBlock[] {
     const content = doc.body?.content || [];
-    const blocks: Array<{ heading: string; startIndex: number; endIndex: number; text: string }> = [];
 
-    for (let i = 0; i < topics.length; i++) {
-        const { text: heading, insertIndex: startIndex } = topics[i];
-        const endIndex =
-            i + 1 < topics.length ? topics[i + 1].insertIndex : content.slice(-1)[0].endIndex!;
+    const cutoffPrefix = cleanHeading("Próximos Passos");
+    const cutoffEl = content.find(el => {
+        const raw = el.paragraph?.elements?.[0].textRun?.content;
+        return cleanHeading(raw).startsWith(cutoffPrefix);
+    });
+    const cutoffIndex = cutoffEl?.startIndex ?? content[content.length - 1].endIndex!;
 
-        // 3) acumula todo texto cujo range caia dentro de [startIndex, endIndex)
-        let blockText = "";
+    // 1) encontre os headings
+    const headings = content
+        .map(el => {
+            const p = el.paragraph;
+            const raw = p?.elements?.[0].textRun?.content;
+            const style = p?.paragraphStyle?.namedStyleType;
+            const bold = p?.elements?.[0].textRun?.textStyle?.bold;
+            if (!raw) return null;
+            const clean = cleanHeading(raw);
+            if (
+                wantedHeadings.map(cleanHeading).includes(clean) &&
+                (style === "HEADING_1" || style === "HEADING_2" || bold)
+            ) {
+                return {
+                    heading: clean,
+                    headingStartIndex: el.startIndex!,
+                    contentStartIndex: el.endIndex!,      // <- onde o conteúdo começa
+                };
+            }
+            return null;
+        })
+        .filter((x): x is { heading: string; headingStartIndex: number; contentStartIndex: number } => !!x);
+
+    // 2) monte os blocos
+    const blocks: DocBlock[] = [];
+    for (let i = 0; i < headings.length; i++) {
+        const { heading, headingStartIndex, contentStartIndex } = headings[i];
+        const nextHeadingStart = i + 1 < headings.length
+            ? headings[i + 1].headingStartIndex
+            : cutoffIndex;
+
+        // 3) extraia texto entre contentStartIndex e nextHeadingStart
+        let text = "";
         for (const el of content) {
-            const elStart = el.startIndex ?? 0;
-            const elEnd = el.endIndex ?? 0;
-            if (elStart >= startIndex && elEnd <= endIndex) {
-                for (const e of el.paragraph?.elements || []) {
-                    blockText += e.textRun?.content || "";
+            const s = el.startIndex ?? 0;
+            const e = el.endIndex ?? 0;
+            if (s >= contentStartIndex && e <= nextHeadingStart) {
+                for (const run of el.paragraph?.elements || []) {
+                    text += run.textRun?.content || "";
                 }
             }
         }
 
-        blocks.push({ heading, startIndex, endIndex, text: blockText.trim() });
+        blocks.push({
+            heading,
+            startIndex: contentStartIndex,
+            endIndex: nextHeadingStart,
+            text: text.trim(),
+        });
     }
 
     return blocks;

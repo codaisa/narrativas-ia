@@ -16,6 +16,8 @@ const BrainstormBody = () => {
   const narrative = useStore(state => state.narrative);
   const [isCreating, setIsCreating] = useState(false)
 
+  const brainstorm = useStore(state => state.brainstorm)
+
   const [formState, action] = useActionState<CreateNarrativeResult, FormData>(
     createNarrativeAction,
     { status: "idle" }
@@ -95,6 +97,7 @@ const BrainstormBody = () => {
         </motion.div>
 
         <input type="hidden" name="docId" value={process.env.NEXT_PUBLIC_TEMPLATE_DOC_6PAGINAS_ID} />
+        <input type={"hidden"} name={"brainstormData"} value={JSON.stringify(brainstorm || {})} />
         <input
           type="hidden"
           name="systemPromptBase"
@@ -109,15 +112,6 @@ const BrainstormBody = () => {
           type="hidden"
           name="title"
           value={narrative?.title}
-        />
-        <input
-          type="hidden"
-          name="tipo"
-          value={narrative?.tipo}
-        />
-        <input type="hidden"
-          name="diretoria"
-          value={narrative?.diretoria}
         />
 
         <div className="w-full flex justify-center mb-2 mt-20 ">
@@ -152,7 +146,10 @@ const BrainstormBody = () => {
               <div className="flex justify-center space-x-4">
                 <Button
                   variant="default"
-                  onClick={() => window.open(formState.url, "_blank")}
+                  onClick={() => {
+                    window.open(formState.url, "_blank")
+                    setShowModal(false)
+                  }}
                 >
                   Abrir documento
                 </Button>

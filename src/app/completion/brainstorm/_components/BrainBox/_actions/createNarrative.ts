@@ -4,7 +4,6 @@ import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { google } from "googleapis";
 import {
-    batchUpdateDocument,
     getDocument,
     getAuthClient,
 } from "@/libs/googleDocs";
@@ -22,113 +21,110 @@ export async function createNarrativeAction(
 ): Promise<CreateNarrativeResult> {
 
     try {
-        // 1) Extrai tudo do form
+        const brainstorm = formData.get("brainstormData") as string | null;
         const templateId = formData.get("docId") as string;
         const systemPromptBase = formData.get("systemPromptBase") as string;
         const title = formData.get("title") as string;
-        const tipo = formData.get("tipo") as string;
-        const diretoria = formData.get("diretoria") as string;
 
-        // 2) Autentica
         const auth = getAuthClient();
-
-        // 3) Copia o template
         const drive = google.drive({ version: "v3", auth });
+        const docs = google.docs({ version: "v1", auth });
+
+        // Copia o template
         const copyRes = await drive.files.copy({
             fileId: templateId,
-            requestBody: {
-                name: `NarrativaIA – ${title}`,
-            },
+            requestBody: { name: `NarrativaIA – ${title}` },
         });
-
         const newDocId = copyRes.data.id!;
-
         await drive.permissions.create({
             fileId: newDocId,
-            requestBody: {
-                role: "writer",
-                type: "anyone",
-                allowFileDiscovery: false
-            },
+            requestBody: { role: "writer", type: "anyone", allowFileDiscovery: false },
         });
 
-        const meta = await drive.files.get({
-            fileId: newDocId,
-            fields: "id, name, webViewLink",
-        });
-
-        // 4) Leia o clone e extraia headings
-        const doc = await getDocument(newDocId);
-
+        // headings na ordem
         const headings = [
             "Delimitação do Problema",
             "Apresentação do Tema",
             "FAQ (Perguntas Frequentes)",
             "Pontos de Decisão",
-            "Próximos Passos",
         ];
-
-        // 3) extraia blocos
-        const blocks = extractBlocks(doc, headings);
 
         let history = "";
 
-        const requests: any[] = [];
+        for (const heading of headings) {
+            // sempre buscar documento atualizado
+            const doc = await getDocument(newDocId);
 
-        // 4) para cada bloco, chame a IA e acumule
-        for (const block of blocks) {
+            // extrai apenas o bloco deste heading
+            const blocks = extractBlocks(doc, [heading]);
+            if (blocks.length === 0) continue;
+            const block = blocks[0];
 
+            // gera prompt
             const promptForAI = `
-            HISTÓRICO:
-            ${history}
+                BRAINSTORM(SCAMPER):
+                ${brainstorm}
 
-            TÓPICO: ${block.heading}
+                HISTÓRICO:
+                ${history}
 
-            CONTEÚDO ATUAL DO TÓPICO:
-            ${block.text}
+                TÓPICO: ${block.heading}
 
-            CONTEXTO GERAL: Título=${title}, Tipo=${tipo}, Diretoria=${diretoria}
+                CONTEÚDO ATUAL DO TÓPICO:
+                ${block.text}
 
-            INSTRUÇÕES: …seu mainPrompt específico…
+                INSTRUÇÕES:
+                1. NÃO COMEÇAR a resposta repetindo o título do tópico. Vá direto ao conteúdo.
+                2. Não repita o conteúdo que já existe no documento.
+                3. Não insira caracteres especiais como “**” nem marcações de markdown.
+                4. Escreva sempre em língua portuguesa, de forma clara e objetiva.
+                5. Substitua completamente o bloco “CONTEÚDO ATUAL DO TÓPICO” pelo novo texto gerado.
+                6. Mantenha o estilo formal adequado para apresentação a uma diretoria.
+                7. Preserve o heading, elimine instruções internas (“HISTÓRICO:”, “TÓPICO:”).
+                8. Crie uma narrativa que solucione a dor informada.
+                9. Não disserte sobre o que te envio, disserte sobre soluções.
+                10. Não mencione algo como Problema a ser Resolvido:
             `;
 
-            // 5) Prepare cabeçalho + SCAMPER
-            // chame a IA
+            // chama OpenAI
+            let aiText = "";
             const { textStream } = streamText({
                 model: openai("gpt-3.5-turbo"),
                 system: systemPromptBase,
                 prompt: promptForAI,
             });
-            let aiText = "";
-            for await (const chunk of textStream) aiText += chunk;
+            for await (const c of textStream) aiText += c;
 
-            // 5) Agende remoção do conteúdo antigo e inserção do novo
-            // primeiro remove o intervalo
-            requests.push({
-                deleteContentRange: { range: { startIndex: block.startIndex, endIndex: block.endIndex } },
-            });
+            aiText = aiText.replace(/\*\*(.+?)\*\*/g, "$1").trim();
+            const headingPattern = new RegExp(`^${block.heading}\\s*`, "i");
+            aiText = aiText.replace(headingPattern, "").trim();
 
-            // depois insere a resposta
-            requests.push({
-                insertText: {
-                    text: `\n${aiText.trim()}\n\n`,
-                    location: { index: block.startIndex },
+            // aplica imediatamente delete + insert para este bloco
+            const requests = [
+                {
+                    deleteContentRange: {
+                        range: { startIndex: block.startIndex, endIndex: block.endIndex },
+                    },
                 },
+                {
+                    insertText: {
+                        location: { index: block.startIndex },
+                        text: `\n${aiText}\n\n`,
+                    },
+                },
+            ];
+            await docs.documents.batchUpdate({
+                documentId: newDocId,
+                requestBody: { requests },
             });
 
-            history += `TÓPICO: ${block.heading}\n${aiText.trim()}\n\n`;
+            // acumula histórico
+            history += `TÓPICO: ${block.heading}\n${aiText}\n\n`;
         }
 
-        // 6) Aplique tudo no clone
-        await batchUpdateDocument(newDocId, requests);
-
-        // 7) Retorne a URL do novo documento
-        const newDocUrl = `https://docs.google.com/document/d/${newDocId}`;
-        return { status: "success", url: newDocUrl };
-
+        return { status: "success", url: `https://docs.google.com/document/d/${newDocId}` };
     } catch (e: any) {
         console.error(e);
         return { status: "error", error: e.message };
-
     }
 }
