@@ -1,6 +1,5 @@
 import { google } from "googleapis";
 import type { JWT } from "google-auth-library";
-import { readFileSync } from "fs";
 
 let jwtClient: JWT
 

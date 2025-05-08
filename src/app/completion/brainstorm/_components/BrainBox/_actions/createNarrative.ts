@@ -124,8 +124,8 @@ export async function createNarrativeAction(
         }
 
         return { status: "success", url: `https://docs.google.com/document/d/${newDocId}` };
-    } catch (e: any) {
-        console.error(e);
-        return { status: "error", error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        return { status: "error", error: message };
     }
 }

@@ -1,6 +1,5 @@
 import React from "react";
 import MainForm from "./_components/MainForm";
-import NarrativaForm from "./_components/NarrativaForm";
 
 const MainResumePage = () => {
   return (
