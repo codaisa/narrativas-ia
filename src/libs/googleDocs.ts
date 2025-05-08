@@ -7,8 +7,7 @@ let jwtClient: JWT
 export function getAuthClient(): JWT {
     if (jwtClient) return jwtClient;
 
-    const path = process.env.GOOGLE_CREDENTIALS_PATH!;
-    const credsJson = readFileSync(path, "utf-8");
+    const credsJson = process.env.GOOGLE_CREDENTIALS!;
     const key = JSON.parse(credsJson);
 
     jwtClient = new google.auth.JWT({
