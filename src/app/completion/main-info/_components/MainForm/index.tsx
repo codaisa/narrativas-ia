@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/stores/useStore";
-import { IMainForm, submitInitialPrompt } from "../../_actions";
+import { submitInitialPrompt } from "../../_actions";
 import { INITIAL_MAIN_FORM_STATE } from "../../_common";
 
 import { Input } from "@/components/ui/input";

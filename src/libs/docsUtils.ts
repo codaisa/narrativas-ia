@@ -90,7 +90,7 @@ export function extractBlocks(
     // 2) monte os blocos
     const blocks: DocBlock[] = [];
     for (let i = 0; i < headings.length; i++) {
-        const { heading, headingStartIndex, contentStartIndex } = headings[i];
+        const { heading, contentStartIndex } = headings[i];
         const nextHeadingStart = i + 1 < headings.length
             ? headings[i + 1].headingStartIndex
             : cutoffIndex;
