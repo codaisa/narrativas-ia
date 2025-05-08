@@ -83,7 +83,8 @@ export async function createNarrativeAction(
                 7. Preserve o heading, elimine instruções internas (“HISTÓRICO:”, “TÓPICO:”).
                 8. Crie uma narrativa que solucione a dor informada.
                 9. Não disserte sobre o que te envio, disserte sobre soluções.
-                10. Não mencione algo como Problema a ser Resolvido:
+                10. Não mencione algo como "Problema a ser Resolvido:""
+                11. Seja amplo e criativo, forneça caminhos promissores.
             `;
 
             // chama OpenAI
