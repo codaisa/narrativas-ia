@@ -5,7 +5,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import React from "react";
 import { Props } from "../types";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 import { Textarea } from "@/components/ui/textarea";
 
 const FeedbackTab: React.FC<Props> = ({

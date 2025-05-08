@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Question } from "@phosphor-icons/react/dist/ssr";
 import * as Tabs from "./Tabs";
-import { cn } from "@/lib/utils";
+import { cn } from "@/libs/utils";
 import { useCompletion } from "@ai-sdk/react";
 import {
   Sheet,
@@ -36,8 +36,8 @@ export type Props = {
 const tabs = ["Feedback"];
 
 const BrainBox: React.FC<Props> = ({ data, prompt, autoGenerate }) => {
-  const SYSTEM_PROMPT = `Voce está trabalhando na metodologia SCAMPER. com base nesta ideia: ${prompt}. Voce receberá do usuário um questionamento do usuário a respeito de um dos métodos do scamper, ajude a pensar com base na ideia. Seja acertivo, não cite o método scamper. não faça perguntas somente responda.`;
-  const USER_PROMPT = `método: ${data.title} /n/n base: ${data.description}`;
+  const SYSTEM_PROMPT = `Voce está trabalhando na metodologia SCAMPER. com base nesta ideia: ${prompt}. Voce receberá do usuário um questionamento do usuário a respeito de um dos métodos do scamper, ajude a pensar com base na ideia. Seja acertivo, não cite o método scamper. Não faça perguntas somente responda.`;
+  const USER_PROMPT = `método: ${data.title} \n\n base: ${data.description}`;
   const TEMPERATURE = 10;
 
   const brainstorm = useStore((state) => state.brainstorm);
@@ -106,10 +106,10 @@ const BrainBox: React.FC<Props> = ({ data, prompt, autoGenerate }) => {
   }, [handleSubmit]);
 
   useEffect(() => {
-    if (autoGenerate) {
+    if (autoGenerate && prompt) {
       handleGeneratePrompt();
     }
-  }, [autoGenerate, handleGeneratePrompt]);
+  }, [autoGenerate, prompt, handleGeneratePrompt]);
 
   const Tab = Tabs[Object.keys(Tabs)[tab]];
 

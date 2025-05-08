@@ -1,10 +1,15 @@
 import { IMainForm } from "../_actions";
 import { z } from "zod";
 
-export const promptSchema = z
-  .string()
-  .trim()
-  .min(1, { message: "Campo obrigatório" });
+export const formSchema = z.object({
+  title: z.string().min(1),
+  tipo: z.string().min(1),
+  diretoria: z.string().min(1),
+  prompt: z.string().min(1),
+  autoGenerate: z.coerce.boolean(),
+});
+
+export type FormDataType = z.infer<typeof formSchema>;
 
 export const INITIAL_MAIN_FORM_STATE: IMainForm = {
   fields: undefined,

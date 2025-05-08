@@ -12,18 +12,24 @@ export interface IPromptSlice {
   };
   setPrompt: (prompt: { autoGenerate: boolean; data: string }) => void;
 
+  narrative?: { title: string, tipo: string, diretoria: string }
+  setNarrative: (n: { title: string, tipo: string, diretoria: string }) => void
+
   brainstorm?: IScamperData;
-  setBrainstorm: (prompt: IScamperData) => void;
+  setBrainstorm: (b: IScamperData) => void;
 }
 
 export const createPromptSlice: StateCreator<
-  IPromptSlice,
-  [],
-  [],
   IPromptSlice
+// [],
+// [],
+// IPromptSlice
 > = (set) => ({
   prompt: undefined,
   setPrompt: (prompt) => set({ prompt }),
+
+  narrative: undefined,
+  setNarrative: (narrative) => set({ narrative }),
 
   brainstorm: {} as IScamperData,
   setBrainstorm: (brainstorm) => set({ brainstorm }),

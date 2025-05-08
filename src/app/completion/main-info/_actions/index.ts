@@ -1,32 +1,44 @@
 "use server";
 
-import { z } from "zod";
-import { promptSchema } from "../_common";
+import { formSchema } from "../_common";
 
 export interface IMainForm {
   fields?: {
+    title?: string[];
+    tipo?: string[];
+    diretoria?: string[];
     prompt?: string[];
+    autoGenerate?: string[];
   };
-  message?: string;
+  message?: {
+    title: string;
+    tipo: string;
+    diretoria: string;
+    prompt: string;
+    autoGenerate: boolean;
+  };
   status?: string;
 }
 
-export const submitInitialPrompt = async (_: IMainForm, formData: FormData) => {
-  const schema = z.object({
-    prompt: promptSchema,
+export const submitInitialPrompt = async (_prevState: IMainForm, formData: FormData): Promise<IMainForm> => {
+  const data = Object.fromEntries(formData.entries())
+  const parsed = formSchema.safeParse({
+    title: data.title,
+    tipo: data.tipo,
+    diretoria: data.diretoria,
+    prompt: data.prompt,
+    autoGenerate: data.autoGenerate,
   });
-  const parse = schema.safeParse(Object.fromEntries(formData.entries()));
-  console.log(formData);
 
-  if (!parse.success) {
+  if (!parsed.success) {
     return {
-      fields: parse.error.flatten().fieldErrors,
+      fields: parsed.error.flatten().fieldErrors,
       status: "error",
     };
   }
 
   return {
-    message: parse.data.prompt,
+    message: parsed.data,
     status: "success",
   };
 };
